@@ -1,0 +1,695 @@
+Practical 2
+from sklearn.preprocessing import LabelBinarizer
+from sklearn.metrics import classification_report
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.datasets import mnist
+
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+print("[INFO] accessing MNIST...")
+
+
+((trainX, trainY), (testX, testY)) = mnist.load_data()
+
+
+trainX = trainX.reshape((trainX.shape[0], 28 * 28 * 1))
+testX = testX.reshape((testX.shape[0], 28 * 28 * 1))
+
+
+trainX = trainX.astype("float32") / 255.0
+testX = testX.astype("float32") / 255.0
+
+
+lb = LabelBinarizer()
+trainY = lb.fit_transform(trainY)
+testY = lb.transform(testY)
+
+
+
+model = Sequential()
+model.add(Dense(256, input_shape=(784,), activation="relu"))
+model.add(Dense(128, activation="relu"))
+model.add(Dense(64, activation="relu"))
+model.add(Dense(10, activation="softmax"))
+
+
+print("[INFO] training network...")
+Adm = Adam(0.01)
+model.compile(loss="categorical_crossentropy", optimizer=Adm,
+metrics=["accuracy"])
+H = model.fit(trainX, trainY, validation_data=(testX, testY),
+epochs=100, batch_size=128)
+
+
+print("[INFO] evaluating network...")
+predictions = model.predict(testX, batch_size=128)
+print(classification_report(testY.argmax(axis=1),
+  predictions.argmax(axis=1),
+  target_names=[str(x) for x in lb.classes_]))
+
+
+plt.style.use("ggplot")
+plt.figure()
+plt.plot(np.arange(0, 100), H.history["loss"], label="train_loss")
+plt.plot(np.arange(0, 100), H.history["val_loss"], label="val_loss")
+plt.plot(np.arange(0, 100), H.history["accuracy"], label="train_acc")
+plt.plot(np.arange(0, 100), H.history["val_accuracy"],
+label="val_acc")
+plt.title("Training Loss and Accuracy")
+plt.xlabel("Epoch #")
+plt.ylabel("Loss/Accuracy")
+plt.legend()
+
+
+This code outlines the process of training a neural network using the Keras library in Python to classify handwritten digits from the MNIST dataset. Here's a step-by-step explanation:
+
+1. **Importing Libraries and Modules:**
+   - `LabelBinarizer`: A preprocessing module to convert labels into a binary form.
+   - `classification_report`: A metrics module to summarize the performance of the classifier.
+   - `Sequential`: The Keras model that will be used, which is a linear stack of layers.
+   - `Dense`: A standard fully-connected neural network layer.
+   - `Adam`: An optimizer, specifically a variant of the stochastic gradient descent algorithm.
+   - `mnist`: The dataset module, which contains the MNIST dataset.
+   - `matplotlib.pyplot`: A plotting library to visualize the training process.
+   - `numpy`: A scientific computing library for array operations.
+
+2. **Loading MNIST Dataset:**
+   - It prints a message indicating that the MNIST dataset is being accessed.
+   - The dataset is loaded with training data (`trainX`, `trainY`) and testing data (`testX`, `testY`).
+
+3. **Preprocessing Input Data:**
+   - The training and testing images (`trainX` and `testX`) are reshaped to have a flat vector of 784 elements (28x28 pixels).
+   - These vectors are then normalized by converting the pixel values from integers (0-255) to floats (0.0-1.0).
+
+4. **Preprocessing Output Labels:**
+   - `LabelBinarizer` is used to one-hot encode the labels, turning them into binary vectors.
+
+5. **Building the Neural Network Model:**
+   - A `Sequential` model is created.
+   - Four `Dense` layers are added to the model:
+     - The first has 256 neurons and uses ReLU activation.
+     - The second has 128 neurons and also uses ReLU activation.
+     - The third has 64 neurons with ReLU activation.
+     - The fourth is the output layer with 10 neurons (for the 10 possible classes) and uses softmax activation.
+
+6. **Compiling the Model:**
+   - It prints a message indicating that network training is starting.
+   - The model is compiled using the Adam optimizer with a learning rate of 0.01, and the loss function is set to `categorical_crossentropy` for multi-class classification. The metric for evaluation is accuracy.
+
+7. **Training the Model:**
+   - The model is trained with the MNIST training data, using the corresponding labels, with a specified validation dataset, for 100 epochs and with a batch size of 128.
+
+8. **Evaluating the Model:**
+   - It prints a message indicating that network evaluation is starting.
+   - The model's predictions are made on the test set, and the `classification_report` function is used to print out a detailed report of the model's performance on each class.
+
+9. **Plotting Training Results:**
+   - It sets a specific style for the plot using `ggplot`.
+   - A new figure is created for plotting.
+   - Training and validation loss, as well as training and validation accuracy, are plotted over the epochs to visualize the learning process.
+   - A legend, title, and axis labels are added for clarity.
+
+
+Practical 3
+import tensorflow as tf
+from tensorflow.keras import datasets, layers, models
+import matplotlib.pyplot as plt
+
+
+(train_images, train_labels), (test_images, test_labels) = datasets.cifar10.load_data()
+
+
+train_images, test_images = train_images / 255.0, test_images / 255.0
+
+
+class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer','dog', 'frog', 'horse', 'ship', 'truck']
+
+
+plt.figure(figsize=(10,10))
+for i in range(5):
+  plt.subplot(5,5,i+1)
+  plt.xticks([])
+  plt.yticks([])
+  plt.grid(False)
+  plt.imshow(train_images[i])
+  # The CIFAR labels happen to be arrays,
+  # which is why you need the extra index
+  plt.xlabel(class_names[train_labels[i][0]])
+plt.show()
+
+
+
+model = models.Sequential()
+model.add(layers.Conv2D(32, (3, 3), activation='relu',input_shape=(32, 32, 3)))
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+
+
+
+model.summary()
+
+
+model.add(layers.Flatten())
+model.add(layers.Dense(64, activation='relu'))
+model.add(layers.Dense(10))
+
+
+model.summary()
+
+
+model.compile(optimizer='adam',loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+metrics=['accuracy'])
+history = model.fit(train_images, train_labels, epochs=10,
+validation_data=(test_images, test_labels))
+
+
+plt.plot(history.history['accuracy'], label='accuracy')
+plt.plot(history.history['val_accuracy'], label = 'val_accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.ylim([0.5, 1])
+plt.legend(loc='lower right')
+test_loss, test_acc = model.evaluate(test_images, test_labels,verbose=2)
+
+
+
+The provided code is for a Convolutional Neural Network (CNN) to classify images from the CIFAR-10 dataset using TensorFlow and Keras. Here's a detailed breakdown:
+
+1. **Import Libraries:**
+   - `tensorflow`: The core machine learning library.
+   - `datasets`, `layers`, `models`: Sub-modules of `keras` for loading datasets, building neural network layers, and constructing models.
+   - `matplotlib.pyplot`: For plotting graphs and images.
+
+2. **Load and Prepare Data:**
+   - The CIFAR-10 dataset is loaded, which consists of 60,000 32x32 color images in 10 classes, with 6,000 images per class.
+   - The images are divided into training and testing sets.
+   - The pixel values of the images are normalized to be between 0 and 1 by dividing by 255.
+
+3. **Define Class Names:**
+   - A list of class names is defined to label the images.
+
+4. **Visualize Data:**
+   - A 10x10 figure is created for displaying images.
+   - A loop is used to display the first 5 images from the training set in a 5x5 grid. Each image is labeled with its corresponding class name.
+
+5. **Build the CNN Model:**
+   - A `Sequential` model is initialized.
+   - Three convolutional layers (`Conv2D`) are added with ReLU activation, each followed by a max-pooling layer (`MaxPooling2D`).
+   - The input shape for the first layer is set to match the image dimensions (32x32 pixels with 3 color channels).
+
+6. **Model Summary (First Part):**
+   - `model.summary()` is called to print a summary of the model so far, showing the structure and the number of parameters at each layer.
+
+7. **Extend the Model:**
+   - A `Flatten` layer is added to convert the 3D output to 1D.
+   - Two `Dense` layers are added: one with 64 units and ReLU activation, and the other with 10 units (the output layer).
+
+8. **Model Summary (Second Part):**
+   - `model.summary()` is called again to print the complete model structure, including the newly added layers.
+
+9. **Compile the Model:**
+   - The model is compiled with the Adam optimizer.
+   - The loss function is set to `SparseCategoricalCrossentropy`, which is used for multi-class classification problems where the targets are integers.
+   - The metric used to evaluate the model is accuracy.
+
+10. **Train the Model:**
+    - The model is trained using the training images and labels for 10 epochs.
+    - Validation data is provided to monitor the model's performance on the test set after each epoch.
+
+11. **Plot Training History:**
+    - A plot is created to visualize the training and validation accuracy over the epochs.
+
+12. **Evaluate the Model:**
+    - The trained model is evaluated on the test set, and the test loss and accuracy are printed.
+
+The model's performance can be inferred from the accuracy plot and the test accuracy value, which shows how well the CNN can classify images from the CIFAR-10 dataset.
+
+What is ReLu
+ReLU stands for Rectified Linear Unit, and it is a type of activation function that is widely used in neural networks, particularly in convolutional neural networks (CNNs). The function is defined mathematically as:
+ReLU(x)=max(0,x)
+This means that if the input 
+x is positive, the output is 
+x, but if the input is negative, the output is 0.
+
+•What is autoencoder
+An autoencoder is a type of artificial neural network used to learn efficient codings of unlabeled data, typically for the purpose of dimensionality reduction or feature learning. The main goal of an autoencoder is to learn a representation (encoding) for a set of data, typically for the purpose of dimensionality reduction.
+
+Here's how an autoencoder works:
+
+1. **Encoding:** First, the network compresses the input into a latent-space representation. It encodes inputs as compact codes, which are lower-dimensional and dense versions of the data.
+
+2. **Bottleneck:** This compact representation is referred to as the code, latent variables, or bottleneck features. The encoder transforms the input into this bottleneck, which contains the compressed knowledge of the input data.
+
+3. **Decoding:** The network then reconstructs the input data from this encoded representation. The decoder works to regenerate the input from its encoded form to as close a representation of the original input as possible.
+
+An autoencoder has two main parts:
+
+- **Encoder:** This part of the network compresses the input into a latent-space representation. It defines the mapping from the input to the code.
+
+- **Decoder:** This part aims to reconstruct the input from the latent space representation. It defines the mapping from the code to the reconstruction.
+
+The learning process of an autoencoder is unsupervised in that it doesn't need explicit labels to train on. Instead, it uses a loss function that measures the difference between the output and the input, which drives it to learn a useful representation of the data. This loss is often termed "reconstruction loss" and can be quantified by mean squared error or binary cross-entropy, depending on the nature of the input.
+
+Autoencoders are used for several applications including:
+
+- **Dimensionality Reduction:** Like PCA, autoencoders can reduce the dimensionality of the input data for visualization or to accelerate learning algorithms.
+- **Feature Learning:** They can learn features for another task, such as classification.
+- **Denoising:** They can be used to remove noise from images or signals.
+- **Anomaly Detection:** In cases where autoencoders are trained on "normal" data, they can be used to detect anomalies by identifying samples that have higher reconstruction error.
+
+Variants of autoencoders, such as variational autoencoders (VAEs) or denoising autoencoders, have additional properties and use cases, expanding their utility in various domains of machine learning.
+
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from sklearn.metrics import accuracy_score, precision_score,recall_score
+from sklearn.model_selection import train_test_split
+from tensorflow.keras import layers, losses
+from tensorflow.keras.datasets import fashion_mnist
+from tensorflow.keras.models import Model
+
+
+(x_train, _), (x_test, _) = fashion_mnist.load_data()
+x_train = x_train.astype('float32') / 255.
+x_test = x_test.astype('float32') / 255.
+print (x_train.shape)
+print (x_test.shape)
+
+
+latent_dim = 64
+class Autoencoder(Model):
+  def __init__(self, latent_dim):
+    super(Autoencoder, self).__init__()
+    self.latent_dim = latent_dim
+    self.encoder = tf.keras.Sequential([
+    layers.Flatten(),
+    layers.Dense(latent_dim, activation='relu'),
+    ])
+    self.decoder = tf.keras.Sequential([
+    layers.Dense(784, activation='sigmoid'),
+    layers.Reshape((28, 28))
+    ])
+  def call(self, x):
+    encoded = self.encoder(x)
+    decoded = self.decoder(encoded)
+    return decoded
+autoencoder = Autoencoder(latent_dim)
+autoencoder.compile(optimizer='adam', loss=losses.MeanSquaredError())
+
+
+autoencoder.fit(x_train, x_train,epochs=10,shuffle=True,validation_data=(x_test, x_test))
+
+
+encoded_imgs = autoencoder.encoder(x_test).numpy()
+decoded_imgs = autoencoder.decoder(encoded_imgs).numpy()
+n = 10
+plt.figure(figsize=(20, 4))
+for i in range(n):
+# display original
+  ax = plt.subplot(2, n, i + 1)
+  plt.imshow(x_test[i])
+  plt.title("original")
+  plt.gray()
+  ax.get_xaxis().set_visible(False)
+  ax.get_yaxis().set_visible(False)
+  # display reconstruction
+  ax = plt.subplot(2, n, i + 1 + n)
+  plt.imshow(decoded_imgs[i])
+  plt.title("reconstructed")
+  plt.gray()
+  ax.get_xaxis().set_visible(False)
+  ax.get_yaxis().set_visible(False)
+plt.show()
+
+
+dataframe =pd.read_csv('http://storage.googleapis.com/download.tensorflow.org/data/ecg.csv', header=None)
+raw_data = dataframe.values
+dataframe.tail()
+
+
+# The last element contains the labels
+labels = raw_data[:, -1]
+
+
+# The other data points are the electrocadriogram data
+data = raw_data[:, 0:-1]
+train_data, test_data, train_labels, test_labels = train_test_split(data, labels, test_size=0.2, random_state=21)
+
+
+#Normalize the data to [0,1].
+min_val = tf.reduce_min(train_data)
+max_val = tf.reduce_max(train_data)
+
+train_data = (train_data - min_val) / (max_val - min_val)
+test_data = (test_data - min_val) / (max_val - min_val)
+
+train_data = tf.cast(train_data, tf.float32)
+test_data = tf.cast(test_data, tf.float32)
+
+
+train_labels = train_labels.astype(bool)
+test_labels = test_labels.astype(bool)
+
+normal_train_data = train_data[train_labels]
+normal_test_data = test_data[test_labels]
+
+anomalous_train_data = train_data[~train_labels]
+anomalous_test_data = test_data[~test_labels]
+
+
+#Plot a normal ECG.
+plt.grid()
+plt.plot(np.arange(140), normal_train_data[0])
+plt.title("A Normal ECG")
+plt.show()
+
+
+#Plot an anomalous ECG.
+plt.grid()
+plt.plot(np.arange(140), anomalous_train_data[0])
+plt.title("An Anomalous ECG")
+plt.show()
+
+
+#Build the model
+class AnomalyDetector(Model):
+  def __init__(self):
+    super(AnomalyDetector, self).__init__()
+    self.encoder = tf.keras.Sequential([
+    layers.Dense(32, activation="relu"),
+    layers.Dense(16, activation="relu"),
+    layers.Dense(8, activation="relu")])
+    self.decoder = tf.keras.Sequential([
+    layers.Dense(16, activation="relu"),
+    layers.Dense(32, activation="relu"),
+    layers.Dense(140, activation="sigmoid")])
+  def call(self, x):
+    encoded = self.encoder(x)
+    decoded = self.decoder(encoded)
+    return decoded
+autoencoder = AnomalyDetector()
+autoencoder.compile(optimizer='adam', loss='mae')
+
+
+history = autoencoder.fit(normal_train_data, normal_train_data,epochs=20,batch_size=512,validation_data=(test_data, test_data),shuffle=True)
+
+
+plt.plot(history.history["loss"], label="Training Loss")
+plt.plot(history.history["val_loss"], label="Validation Loss")
+plt.legend()
+
+
+encoded_data = autoencoder.encoder(normal_test_data).numpy()
+decoded_data = autoencoder.decoder(encoded_data).numpy()
+plt.plot(normal_test_data[0], 'b')
+plt.plot(decoded_data[0], 'r')
+plt.fill_between(np.arange(140), decoded_data[0], normal_test_data[0],
+color='lightcoral')
+plt.legend(labels=["Input", "Reconstruction", "Error"])
+plt.show()
+
+
+encoded_data = autoencoder.encoder(anomalous_test_data).numpy()
+decoded_data = autoencoder.decoder(encoded_data).numpy()
+plt.plot(anomalous_test_data[0], 'b')
+plt.plot(decoded_data[0], 'r')
+plt.fill_between(np.arange(140), decoded_data[0],
+anomalous_test_data[0], color='lightcoral')
+plt.legend(labels=["Input", "Reconstruction", "Error"])
+plt.show()
+
+
+
+#Plot the reconstruction error on normal ECGs from the training set
+reconstructions = autoencoder.predict(normal_train_data)
+train_loss = tf.keras.losses.mae(reconstructions, normal_train_data)
+plt.hist(train_loss[None,:], bins=50)
+plt.xlabel("Train loss")
+plt.ylabel("No of examples")
+plt.show()
+
+
+threshold = np.mean(train_loss) + np.std(train_loss)
+print("Threshold: ", threshold)
+
+
+reconstructions = autoencoder.predict(anomalous_test_data)
+test_loss = tf.keras.losses.mae(reconstructions, anomalous_test_data)
+plt.hist(test_loss[None, :], bins=50)
+plt.xlabel("Test loss")
+plt.ylabel("No of examples")
+plt.show()
+
+
+def predict(model, data, threshold):
+  reconstructions = model(data)
+  loss = tf.keras.losses.mae(
+
+
+
+The code you provided is constructing and training two autoencoder models using TensorFlow and Keras. One autoencoder is for the Fashion MNIST dataset, and the other is for an ECG (electrocardiogram) dataset. Let's break it down step by step:
+
+1. **Import Libraries:**
+   - Import necessary libraries including TensorFlow, pandas for data manipulation, numpy for numerical operations, and matplotlib for plotting.
+
+2. **Load Fashion MNIST Data:**
+   - Load the Fashion MNIST dataset, which contains images of fashion items. The dataset is divided into training and testing sets, but only the images (`x_train`, `x_test`) are loaded, as the labels are not used.
+
+3. **Preprocess the Images:**
+   - Normalize the pixel values of the images to be in the range [0, 1] for the neural network to process them more effectively.
+
+4. **Print Dataset Shapes:**
+   - Print the shapes of the training and testing datasets to verify their dimensions.
+
+5. **Define Autoencoder for Fashion MNIST:**
+   - Define an `Autoencoder` class that inherits from the `Model` class.
+   - Initialize the encoder and decoder as sequences of Keras layers.
+   - The encoder compresses the input to a latent space of dimension `latent_dim`.
+   - The decoder reconstructs the input from the latent representation.
+   - Define a `call` method that describes how the model processes the input (encodes and then decodes it).
+
+6. **Train the Fashion MNIST Autoencoder:**
+   - Compile and train the autoencoder on the Fashion MNIST training data with the Mean Squared Error loss for 10 epochs.
+   - Use the testing data for validation.
+
+7. **Visualize Reconstruction:**
+   - Use the trained autoencoder to encode and decode images from the test set.
+   - Plot original and reconstructed images side by side for comparison.
+
+8. **Load ECG Data:**
+   - Load a CSV file containing ECG data into a pandas DataFrame.
+   - Extract labels and data from the DataFrame.
+   - Split the ECG data into a training set and a test set using `train_test_split`.
+
+9. **Normalize ECG Data:**
+   - Normalize the ECG data to the range [0, 1].
+   - Convert the data to TensorFlow tensors and cast them to float32.
+
+10. **Separate Normal and Anomalous Data:**
+    - Separate the normal and anomalous data based on the labels for training and testing.
+
+11. **Visualize ECGs:**
+    - Plot examples of normal and anomalous ECGs.
+
+12. **Define Autoencoder for ECG Data:**
+    - Define an `AnomalyDetector` class with an encoder and decoder, structured to handle ECG data.
+
+13. **Train the ECG Autoencoder:**
+    - Compile and train the autoencoder on the normal ECG training data for 20 epochs with a batch size of 512, using Mean Absolute Error (MAE) as the loss function.
+    - Validation is performed on the test data.
+
+14. **Plot Training History:**
+    - Plot the training and validation loss to visualize the learning process.
+
+15. **Visualize ECG Reconstructions:**
+    - Encode and decode normal and anomalous ECGs from the test set.
+    - Plot the original and reconstructed ECGs along with the reconstruction error.
+
+16. **Calculate Reconstruction Error:**
+    - Predict the normal ECGs from the training set and calculate the MAE loss.
+    - Visualize the distribution of the reconstruction error on normal ECGs.
+
+17. **Determine Anomaly Threshold:**
+    - Set a threshold for anomaly detection as the mean plus one standard deviation of the training loss.
+
+18. **Evaluate Anomalous Test Data:**
+    - Predict the anomalous test data and calculate the MAE loss.
+    - Visualize the distribution of the test loss for anomalous examples.
+
+19. **Define Anomaly Prediction Function:**
+    - Define a function that predicts whether data points are anomalies by comparing the reconstruction loss to the threshold.
+
+20. **Define a Function to Print Statistics:**
+    - Define a function that calculates and prints the accuracy, precision, and recall of the predictions.
+
+21. **Make Predictions and Print Statistics:**
+    - Use the `predict` function to make predictions on the training and test data.
+    - Use the `print_stats` function to print the performance statistics of the anomaly detector.
+
+The code thus outlines the entire process of using autoencoders for dimensionality reduction on the Fashion MNIST dataset and anomaly detection on ECG data. Autoencoders learn to compress the data into a lower-dimensional representation and then reconstruct the data back to its original form. The reconstruction error is used to detect anomalies, under the assumption that the autoencoder will have a higher error when reconstructing data that differs from what it was trained on.
+
+
+
+
+
+
+Practical 5
+import matplotlib.pyplot as plt
+import seaborn as sns
+import matplotlib as mpl
+import matplotlib.pylab as pylab
+import numpy as np
+%matplotlib inline
+from nltk.tokenize import sent_tokenize, word_tokenize
+import warnings
+warnings.filterwarnings(action = 'ignore')
+import gensim
+from gensim.models import Word2Vec
+import re
+import bs4 as bs
+import urllib.request
+import nltk
+nltk.download('punkt')
+nltk.download('stopwords')
+
+
+scrapped_data=urllib.request.urlopen("https://en.wikipedia.org/wiki/Machine_learning")
+article=scrapped_data.read()
+paresed_article=bs.BeautifulSoup(article,'lxml')
+paragraphs=paresed_article.find_all('p')
+article_text=""
+for p in paragraphs:
+  article_text+=p.text
+sentences=article_text
+print(article_text)
+
+
+sentences="""Alice 23 opened the door and found that it led into a
+small 90
+passage, not much larger than a rat-hole: she knelt down and
+looked along the passage into the loveliest garden you ever saw.
+How she longed to get out of that dark hall, and wander about
+among those beds of bright flowers and those cool fountains, but
+she could not even get her head through the doorway; `and even if
+my head would go through,' (thought) $poor Alice, `it would be of
+very little use without my shoulders. Oh, how I wish
+I could shut up like a telescope! I think I could, if I only
+know how to begin.' For, you see, so many out-of-the-way things
+had happened lately, that Alice had begun to think that very few
+things indeed were really impossible.
+"""
+sentences = re.sub('[^A-Za-z0-9]+', ' ', sentences)
+sentences = re.sub(r'(?:^| )\w(?:$| )', ' ', sentences).strip()
+print(sentences)
+
+
+# remove special characters
+sentences = re.sub('[^A-Za-z]+', ' ', sentences)
+# remove 1 letter words
+sentences = re.sub(r'(?:^| )\w(?:$| )', ' ', sentences).strip()
+# lower all characters
+sentences = sentences.lower()
+all_sent=nltk.sent_tokenize(sentences)
+all_words=[nltk.word_tokenize(sent) for sent in all_sent]
+from nltk.corpus import stopwords
+for i in range(len(all_words)):
+  all_words[i]=[w for w in all_words[i] if w not in
+stopwords.words('english')]
+data =all_words
+data1=data[0]
+
+
+model1 = gensim.models.Word2Vec(data, min_count = 1,vector_size= 52, window= 5)
+
+
+vocabulary = model1.wv.index_to_key
+print(vocabulary)
+
+
+wrd='door'
+#wrd=['subset','machine', 'learning','closely','related']
+v1=model1.wv[wrd]
+similar_words=model1.wv.most_similar(wrd)
+for x in similar_words:
+  print(x)
+
+
+#print(dat[1][0])
+[]
+#for val in dat:
+# print(val[0],val[1])
+i=3
+#print(dat[i][0],dat[i][1])
+#print(model1.predict_output_word(dat[i][0]))
+
+
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+
+words = list(model1.wv.key_to_index.keys())
+vectors = [model1.wv[word] for word in words]
+
+pca = PCA(n_components=2)
+result = pca.fit_transform(vectors)
+
+plt.figure(figsize=(10, 10))
+plt.scatter(result[:, 0], result[:, 1])
+
+for i, word in enumerate(words):
+    plt.annotate(word, xy=(result[i, 0], result[i, 1]))
+
+plt.show()
+
+
+The code is a Python script for natural language processing that performs several tasks, including web scraping, text cleaning, sentence and word tokenization, stop words removal, and word embedding visualization. Here is a step-by-step explanation:
+
+1. **Import Libraries:**
+   - Various libraries are imported for data visualization, web scraping, natural language processing, and mathematical operations.
+
+2. **Setup for Visualizations and Warnings:**
+   - `%matplotlib inline` is a Jupyter notebook magic command that allows matplotlib graphics to be displayed inline within the notebook.
+   - `warnings.filterwarnings(action = 'ignore')` suppresses warnings to keep the notebook cleaner.
+
+3. **Download NLTK Resources:**
+   - `nltk.download('punkt')` and `nltk.download('stopwords')` download necessary datasets for sentence tokenization and stop words.
+
+4. **Web Scraping:**
+   - The script scrapes the Wikipedia page for "Machine learning" and parses the page using BeautifulSoup to extract all paragraphs into `article_text`.
+
+5. **Text Cleaning (First Pass):**
+   - Replaces a hardcoded example text into the `sentences` variable.
+   - Cleans the text by removing special characters and numbers using regex, and also removes single-letter words.
+
+6. **Text Cleaning (Second Pass):**
+   - Removes any non-alphabetic characters and single-letter words again (this seems redundant as it was also done in step 5).
+   - Converts the text to lowercase.
+   - Tokenizes the text into sentences and then words.
+   - Removes English stop words from the tokenized words.
+
+7. **Prepare Data for Word2Vec:**
+   - Prepares the cleaned and tokenized sentences for training the Word2Vec model.
+
+8. **Word2Vec Model:**
+   - Trains a Word2Vec model from the `gensim` library using the tokenized sentences.
+   - The model is set with `min_count = 1` (includes all words), `vector_size = 52` (size of the word vectors), and `window = 5` (the maximum distance between the current and predicted word within a sentence).
+
+9. **Vocabulary:**
+   - Retrieves and prints the vocabulary of the trained Word2Vec model.
+
+10. **Word Similarity:**
+   - Finds and prints words most similar to the word 'door' based on the Word2Vec model.
+
+11. **PCA for Visualization:**
+   - Performs Principal Component Analysis (PCA) to reduce the dimensions of the word vectors to 2D for visualization.
+   - Plots the words in the 2D space using `matplotlib`.
+
+Throughout the code, there are comments that have been turned into strings, which suggests that they are deactivated parts of the code. These parts would normally print specific data points or perform additional tasks if uncommented and executed.
